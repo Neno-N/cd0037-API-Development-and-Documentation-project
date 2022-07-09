@@ -40,6 +40,11 @@ class TriviaTestCase(unittest.TestCase):
             "previous_questions": [23]
         }
 
+        self.playQuizNone = {
+            "quiz_category": "10",
+            "previous_questions": []
+        }
+
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
@@ -83,6 +88,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertTrue(len(data["categories"]))
 
+    def test_404_wrong_request_in_url(self):
+        result = self.client().get("/category")
+        data = json.loads(result.data)
+
+        self.assertEqual(result.status_code, 404)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Resource not found")
+
     # Add a question
     def test_add_new_question(self):
         result = self.client().post("/questions", json=self.new_question)
@@ -101,12 +114,12 @@ class TriviaTestCase(unittest.TestCase):
 
     # Delete question -> Change id each time
     def test_delete_book(self):
-        result = self.client().delete("/questions/22")
+        result = self.client().delete("/questions/16")
         data = json.loads(result.data)
 
         self.assertEqual(result.status_code, 200)
         self.assertEqual(data["success"], True)
-        self.assertEqual(data["deleted"], 22)
+        self.assertEqual(data["deleted"], 16)
 
     def test_422_if_book_does_not_exist(self):
         result = self.client().delete("/questions/1000")
@@ -160,6 +173,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['previous_questions'])
         self.assertTrue(data['quiz_category'])
         self.assertTrue(data['question'])
+
+    def test_404_no_questions_for_category(self):
+        result = self.client().post('/quizzes', json=self.playQuizNone)
+        data = json.loads(result.data)
+
+        self.assertEqual(result.status_code, 404)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Resource not found")
 
 
 # Make the tests conveniently executable

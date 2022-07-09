@@ -4,7 +4,6 @@ import os
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import random
 
 from models import setup_db, Question, Category
 
@@ -235,32 +234,40 @@ def create_app(test_config=None):
         id = str(category_id)
         previous_questions = body.get('previous_questions')
 
+        categories = Category.query.filter(Category.id == id)
+        current_category = {
+            category.id: category.type for category in categories}
+
         if category_id == 0:
             questions = Question.query.order_by(Question.id).all()
         else:
             questions = Question.query.filter(
                 Question.category == id).order_by(Question.id).all()
 
-        questions = [question.format() for question in questions]
+        # test this out mayn
+        if questions == []:
+            abort(404)
+        else:
+            questions = [question.format() for question in questions]
 
-        if len(previous_questions) == len(questions):
+            if len(previous_questions) == len(questions):
+                return jsonify({
+                    "previous_questions": previous_questions,
+                    "quiz_category": category_id,
+                    "question": None
+
+                })
+
+            for q in questions:
+                x = q["id"]
+                if x not in previous_questions:
+                    question = q
+
             return jsonify({
                 "previous_questions": previous_questions,
                 "quiz_category": category_id,
-                "question": None
-
+                "question": question
             })
-
-        for q in questions:
-            x = q["id"]
-            if x not in previous_questions:
-                question = q
-
-        return jsonify({
-            "previous_questions": previous_questions,
-            "quiz_category": category_id,
-            "question": question
-        })
 
     """
     @TODO:
